@@ -1,0 +1,25 @@
+# - Locate DAVIX library
+# Defines:
+#
+#  DAVIX_FOUND
+#  DAVIX_INCLUDE_DIR
+#  DAVIX_INCLUDE_DIRS (not cached)
+#  DAVIX_LIBRARY
+#  DAVIX_CBLAS_LIBRARY
+#  DAVIX_LIBRARIES (not cached)
+
+find_path(DAVIX_INCLUDE_DIR davix.hpp
+          HINTS $ENV{DAVIXROOT}/include/davix ${DAVIXROOT}/include/davix)
+find_library(DAVIX_LIBRARY NAMES davix
+             HINTS $ENV{DAVIXROOT}/lib ${DAVIXROOT}/lib)
+
+set(DAVIX_LIBRARIES ${DAVIX_LIBRARY})
+
+set(DAVIX_INCLUDE_DIRS ${DAVIX_INCLUDE_DIR})
+
+# handle the QUIETLY and REQUIRED arguments and set DAVIX_FOUND to TRUE if
+# all listed variables are TRUE
+INCLUDE(FindPackageHandleStandardArgs)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(DAVIX DEFAULT_MSG DAVIX_INCLUDE_DIR DAVIX_LIBRARIES)
+
+mark_as_advanced(DAVIX_FOUND DAVIX_INCLUDE_DIR DAVIX_LIBRARY)
