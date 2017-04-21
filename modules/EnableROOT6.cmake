@@ -137,7 +137,7 @@ include(CMakeParseArguments)
 # Generate a Reflex dictionary library from the specified header and selection.
 #-------------------------------------------------------------------------------
 macro(reflex_generate_dictionary dictionary _headerfile _selectionfile)
-  CMAKE_PARSE_ARGUMENTS(ARG "SPLIT_CLASSDEF" "" "SET_ROOTMAP" "OPTIONS" ${ARGN})
+  CMAKE_PARSE_ARGUMENTS(ARG "SPLIT_CLASSDEF" "ROOTMAPLIB" "" "OPTIONS" ${ARGN})
 
   # Ensure that the path to the header and selection files are absolute
   if(IS_ABSOLUTE ${_selectionfile})
@@ -160,13 +160,13 @@ macro(reflex_generate_dictionary dictionary _headerfile _selectionfile)
     set(gensrcclassdef)
   endif()
 
-  if(ARG_SET_ROOTMAP)
+  if(ARG_ROOTMAPLIB)
     set(rootmapname ${dictionary}.rootmap)
     set(rootmapopts --rootmap=${rootmapname})
     if (NOT WIN32)
-      set(rootmapopts ${rootmapopts} --rootmap-lib=lib${dictionary})
+      set(rootmapopts ${rootmapopts} --rootmap-lib=${ARG_ROOTMAPLIB})
     else()
-      set(rootmapopts ${rootmapopts} --rootmap-lib=${dictionary})
+      set(rootmapopts ${rootmapopts} --rootmap-lib=${ARG_ROOTMAPLIB})
     endif()
   else()
     set(rootmapname ${dictionary}Dict.rootmap)
@@ -213,7 +213,7 @@ endmacro()
 # Generate and build a Reflex dictionary library from the specified header and selection.
 #-------------------------------------------------------------------------------
 function(reflex_dictionary dictionary headerfile selectionfile)
-  CMAKE_PARSE_ARGUMENTS(ARG "SPLIT_CLASSDEF" "" "LINK_LIBRARIES;OPTIONS" ${ARGN})
+  CMAKE_PARSE_ARGUMENTS(ARG "SPLIT_CLASSDEF" "ROOTMAPLIB" "" "LINK_LIBRARIES;OPTIONS" ${ARGN})
   # ensure that we split on the spaces
   separate_arguments(ARG_OPTIONS)
   # we need to forward the SPLIT_CLASSDEF option to reflex_dictionary()
@@ -222,42 +222,23 @@ function(reflex_dictionary dictionary headerfile selectionfile)
   else()
     set(ARG_SPLIT_CLASSDEF)
   endif()
-  reflex_generate_dictionary(${dictionary} ${headerfile} ${selectionfile} OPTIONS ${ARG_OPTIONS} ${ARG_SPLIT_CLASSDEF})
+  if(ARG_ROOTMAPLIB)
+    set(ARG_ROOTMAPLIB ROOTMAPLIB ${ARG_ROOTMAPLIB})
+  else()
+    set(ARG_ROOTMAPLIB)
+  endif()
+    
+
+  reflex_generate_dictionary(${dictionary} ${headerfile} ${selectionfile} OPTIONS ${ARG_OPTIONS} ${ARG_SPLIT_CLASSDEF} ${ARG_ROOTMAPLIB})
   include_directories(${ROOT_INCLUDE_DIR})
+  if (NOT ARG_ROOTMAPLIB)
   add_library(${dictionary}Dict MODULE ${gensrcdict})
   target_link_libraries(${dictionary}Dict ${ARG_LINK_LIBRARIES} ${ROOT_Core_LIBRARY})
   # ensure that *Gen and *Dict are not built at the same time
   add_dependencies(${dictionary}Dict ${dictionary}Gen)
   # Attach the name of the rootmap file to the target so that it can be used from
   set_property(TARGET ${dictionary}Dict PROPERTY ROOTMAPFILE ${rootmapname})
-endfunction()
-
-#-------------------------------------------------------------------------------
-# reflex_dictionary_multi(dictionary OPTIONS opt1 opt2 ...)
-#
-# Generate a Reflex dictionary source for header/selection file in a directory.
-# Use the name dictionary when creating the PCM file
-#-------------------------------------------------------------------------------
-function(reflex_dictionary_multi dictionary)
-  CMAKE_PARSE_ARGUMENTS(ARG "LINK_LIBRARIES;OPTIONS" ${ARGN})
-  # ensure that we split on the spaces
-  separate_arguments(ARG_OPTIONS)
-  # we need to set the SET_ROOTMAP option for reflex_dictionary()
-  set(ARG_SET_ROOTMAP SET_ROOTMAP)
-  FILE(GLOB classes RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/classes*.h")
-  FOREACH( class ${classes} )
-      MESSAGE(STATUS "Classes header file: ${class}")
-      STRING(REGEX REPLACE "^classes" "" tname "${classes}")
-      STRING(REGEX REPLACE "\.h" "" tname2 "${tName}"
-      set(class_def "classes_def${tname2}.xml")
-      MESSAGE(STATUS "Classes selection file: ${class_def}")
-      reflex_generate_dictionary(${dictionary} ${class} ${class_def} OPTIONS ${ARG_OPTIONS} ${ARG_SET_ROOTMAP})
-  ENDFOREACH(class)
-  include_directories(${ROOT_INCLUDE_DIR})
-  # ensure that *Gen is generated before the package library
-  add_dependencies(${dictionary} ${dictionary}Gen)
-  # Attach the name of the rootmap file to the target so that it can be used from
-  set_property(TARGET ${dictionary} PROPERTY ROOTMAPFILE ${rootmapname})
+  endif()
 endfunction()
 
 #-------------------------------------------------------------------------------
