@@ -162,11 +162,12 @@ macro(reflex_generate_dictionary dictionary _headerfile _selectionfile)
 
   if(ARG_ROOTMAPLIB)
     set(rootmapname ${dictionary}.rootmap)
+    set(rootpcmname ${dictionary}_rdict.pcm)
     set(rootmapopts --rootmap=${rootmapname})
     if (NOT WIN32)
-      set(rootmapopts ${rootmapopts} --rootmap-lib=${ARG_ROOTMAPLIB})
+      set(rootmapopts ${rootmapopts} --rootmap-lib=lib${ARG_ROOTMAPLIB})
     else()
-      set(rootmapopts ${rootmapopts} --rootmap-lib=${ARG_ROOTMAPLIB})
+      set(rootmapopts ${rootmapopts} --rootmap-lib=lib${ARG_ROOTMAPLIB})
     endif()
   else()
     set(rootmapname ${dictionary}Dict.rootmap)
@@ -231,13 +232,15 @@ function(reflex_dictionary dictionary headerfile selectionfile)
 
   reflex_generate_dictionary(${dictionary} ${headerfile} ${selectionfile} OPTIONS ${ARG_OPTIONS} ${ARG_SPLIT_CLASSDEF} ${ARG_ROOTMAPLIB})
   include_directories(${ROOT_INCLUDE_DIR})
-  if (NOT ARG_ROOTMAPLIB)
-  add_library(${dictionary}Dict MODULE ${gensrcdict})
-  target_link_libraries(${dictionary}Dict ${ARG_LINK_LIBRARIES} ${ROOT_Core_LIBRARY})
-  # ensure that *Gen and *Dict are not built at the same time
-  add_dependencies(${dictionary}Dict ${dictionary}Gen)
-  # Attach the name of the rootmap file to the target so that it can be used from
-  set_property(TARGET ${dictionary}Dict PROPERTY ROOTMAPFILE ${rootmapname})
+  if (ARG_ROOTMAPLIB)
+    add_dependencies(${ARG_ROOTMAPLIB} ${dictionary}Gen)
+  else()
+    add_library(${dictionary}Dict MODULE ${gensrcdict})
+    target_link_libraries(${dictionary}Dict ${ARG_LINK_LIBRARIES} ${ROOT_Core_LIBRARY})
+    # ensure that *Gen and *Dict are not built at the same time
+    add_dependencies(${dictionary}Dict ${dictionary}Gen)
+    # Attach the name of the rootmap file to the target so that it can be used from
+    set_property(TARGET ${dictionary}Dict PROPERTY ROOTMAPFILE ${rootmapname})
   endif()
 endfunction()
 
