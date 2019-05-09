@@ -137,7 +137,7 @@ include(CMakeParseArguments)
 # Generate a Reflex dictionary library from the specified header and selection.
 #-------------------------------------------------------------------------------
 macro(reflex_generate_dictionary dictionary _headerfile _selectionfile)
-  CMAKE_PARSE_ARGUMENTS(ARG "SPLIT_CLASSDEF" "" "OPTIONS" ${ARGN})
+  CMAKE_PARSE_ARGUMENTS(ARG "SPLIT_CLASSDEF" "" "SET_ROOTMAP" "OPTIONS" ${ARGN})
 
   # Ensure that the path to the header and selection files are absolute
   if(IS_ABSOLUTE ${_selectionfile})
@@ -160,12 +160,22 @@ macro(reflex_generate_dictionary dictionary _headerfile _selectionfile)
     set(gensrcclassdef)
   endif()
 
-  set(rootmapname ${dictionary}Dict.rootmap)
-  set(rootmapopts --rootmap=${rootmapname})
-  if (NOT WIN32)
-    set(rootmapopts ${rootmapopts} --rootmap-lib=lib${dictionary}Dict)
+  if(ARG_SET_ROOTMAP)
+    set(rootmapname ${dictionary}.rootmap)
+    set(rootmapopts --rootmap=${rootmapname})
+    if (NOT WIN32)
+      set(rootmapopts ${rootmapopts} --rootmap-lib=lib${dictionary})
+    else()
+      set(rootmapopts ${rootmapopts} --rootmap-lib=${dictionary})
+    endif()
   else()
-    set(rootmapopts ${rootmapopts} --rootmap-lib=${dictionary}Dict)
+    set(rootmapname ${dictionary}Dict.rootmap)
+    set(rootmapopts --rootmap=${rootmapname})
+    if (NOT WIN32)
+      set(rootmapopts ${rootmapopts} --rootmap-lib=lib${dictionary}Dict)
+    else()
+      set(rootmapopts ${rootmapopts} --rootmap-lib=${dictionary}Dict)
+    endif()
   endif()
 
   #set(include_dirs -I${CMAKE_CURRENT_SOURCE_DIR})
@@ -220,6 +230,28 @@ function(reflex_dictionary dictionary headerfile selectionfile)
   add_dependencies(${dictionary}Dict ${dictionary}Gen)
   # Attach the name of the rootmap file to the target so that it can be used from
   set_property(TARGET ${dictionary}Dict PROPERTY ROOTMAPFILE ${rootmapname})
+endfunction()
+
+#-------------------------------------------------------------------------------
+# reflex_dictionary_multi(dictionary OPTIONS opt1 opt2 ...)
+#
+# Generate a Reflex dictionary source for header/selection file in a directory.
+# Use the name dictionary when creating the PCM file
+#-------------------------------------------------------------------------------
+function(reflex_dictionary_multi dictionary)
+  separate_arguments(ARG_OPTIONS)
+  # we need to set the SET_ROOTMAP option for reflex_dictionary()
+  set(ARG_SET_ROOTMAP SET_ROOTMAP)
+  FILE(GLOB classes RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/classes*.h")
+  FOREACH( class ${classes} )
+      MESSAGE(STATUS "Classes header file: ${class}")
+      STRING(REGEX REPLACE "^classes" "" tname "${classes}")
+      STRING(REGEX REPLACE "\.h" "" tname2 "${tName}")
+      set(class_def "classes_def${tname2}.xml")
+      MESSAGE(STATUS "Classes selection file: ${class_def}")
+      reflex_generate_dictionary(${dictionary} ${class} ${class_def} OPTIONS ${ARG_OPTIONS} ${ARG_SET_ROOTMAP})
+  ENDFOREACH(class)
+  include_directories(${ROOT_INCLUDE_DIR})
 endfunction()
 
 #-------------------------------------------------------------------------------
