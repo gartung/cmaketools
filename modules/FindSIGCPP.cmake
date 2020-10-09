@@ -8,8 +8,10 @@
 #  SIGCPP_CBLAS_LIBRARY
 #  SIGCPP_LIBRARIES (not cached)
 
-find_path(SIGCPP_INCLUDE_DIR sigc++/sigc++.h)
-find_library(SIGCPP_LIBRARY NAMES sigc-2.0)
+find_path(SIGCPP_INCLUDE_DIR sigc++/sigc++.h
+          HINTS ${SIGCPP_ROOT_DIR}/include/sigc++-2.0)
+find_library(SIGCPP_LIBRARY NAMES sigc-2.0
+          HINTS ${SIGCPP_ROOT_DIR}/lib)
 
 set(SIGCPP_LIBRARIES ${SIGCPP_LIBRARY})
 

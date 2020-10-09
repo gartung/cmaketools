@@ -7,8 +7,10 @@
 #  TINYXML2_LIBRARY
 #  TINYXML2_LIBRARIES (not cached)
 
-find_path(TINYXML2_INCLUDE_DIR tinyxml2.h)
-find_library(TINYXML2_LIBRARY NAMES tinyxml2)
+find_path(TINYXML2_INCLUDE_DIR tinyxml2.h
+          HINTS ${TINYXML2_ROOT_DIR}/include)
+find_library(TINYXML2_LIBRARY NAMES tinyxml2
+          HINTS ${TINYXML2_ROOT_DIR}/lib)
 
 set(TINYXML2_LIBRARIES ${TINYXML2_LIBRARY})
 
